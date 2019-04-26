@@ -8,10 +8,15 @@ class Object{
     this.normals = this.parsedOBJ.normals;
     this.indexCount = this.indices.length;
     this.objectMatrix = mat4.create();
+    this.animated = false;
   }
 
   setMaterial(material){
     this.material = material;
+  }
+  
+  animate(value){
+    this.animated = value;
   }
 
   resetObjectMatrix(){
@@ -43,5 +48,9 @@ class Object{
 
   getObjectMatrix(){
     return this.objectMatrix;
+  }
+
+  isAnimated(){
+    return this.animated;
   }
 }
