@@ -1,3 +1,10 @@
+function crearMateriales(){
+	jade = new Material([0.135,0.2225,0.1575,0.95],[0.54,0.89,0.63,0.95],[0.316228,0.316228,0.316228,0.95],12.8);
+	gold = new Material([0.24725,0.1995,0.0745,1.0],[0.75164,0.60648,0.22648,1.0],[0.628281,0.555802,0.366065,1.0],51.2);
+	rock = new Material([0.2,0.1,0.0,1.0],[0.095466,0.114934,0.102149,1.0],[0.1,0.1,0.1,1.0],2.0);
+}
+
+
 /*Funcion para cargar los sliders de la pagina*/
 function cargarSliders(){
 	for(let i=0; i<6; i++){
@@ -55,7 +62,7 @@ function onSliderUpDownCamera(slider){
 
 /*Funcion para actualizar el valor en el textField*/
 function updateTextInput(num,val) {
-    document.getElementById("textInput"+num).value=val; 
+    document.getElementById("textInput"+num).value=val;
 }
 
 //TODO: CAMBIAR VARIABLES POR ARREGLO
@@ -97,7 +104,7 @@ function setNewValue(num,value){
 
 /*Funcion usada para animar*/
 /*Funcionamiento: Se pasa al metodo un indice, el cual indica que boton se ha pulsado
-y que accion debe llevar a cabo... 
+y que accion debe llevar a cabo...
 */
 function animateObject(index){
 	changed=true; //Activo que hubo un cambio
@@ -144,7 +151,7 @@ function animateObject(index){
 				animateObject(2);//Termino la animacion anterior
 			rotationAngle[9]=-parseFloat(angle[2]); //Tomo el angulo del slider 2
 		}
-		
+
 	}
 	else { //Si ya se encontraba animandose, deseo pararlo
 		animated[index]=false; //Termino la animacion
@@ -217,23 +224,23 @@ function launchFullScreen(element) {
 	if(!fullScreen){ //Si no esta en pantalla completa...
 		if(element.requestFullScreen) //Opcion estandar
 			element.requestFullScreen();
-		else 
+		else
 			if(element.mozRequestFullScreen) //Opcion para Gecko (Firefox)
 				element.mozRequestFullScreen();
-			else 
+			else
 				if(element.webkitRequestFullScreen) //Opcion para Blink (Chrome,Opera,Edge)
 					element.webkitRequestFullScreen();
 		fullScreen=true; //Esta en pantalla completa
 	}
 	else{ //Si estaba en pantalla completa
-		if(document.cancelFullScreen) 
+		if(document.cancelFullScreen)
 			document.cancelFullScreen();
-		else 
-			if(document.mozCancelFullScreen) 
+		else
+			if(document.mozCancelFullScreen)
 				document.mozCancelFullScreen();
-			else 
-				if(document.webkitCancelFullScreen) 
-					document.webkitCancelFullScreen();		
+			else
+				if(document.webkitCancelFullScreen)
+					document.webkitCancelFullScreen();
 	 fullScreen=false; //Ya no lo esta
 	}
 }

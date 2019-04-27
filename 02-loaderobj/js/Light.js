@@ -20,6 +20,7 @@ class Light{
     return this.intensity;
   }
 
+  //Retorno el Angulo de la luz
   getAngle(){
     return angle;
   }

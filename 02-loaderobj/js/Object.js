@@ -9,12 +9,23 @@ class Object{
     this.indexCount = this.indices.length;
     this.objectMatrix = mat4.create();
     this.animated = false;
+    this.vao = null;
+    this.center = Utils.boundingBoxCenter(this.positions);
+  }
+
+  /*-------------------SETTERS-------------------*/
+  setCenter(center){
+    this.center = center;
+  }
+
+  setVao(vao){
+    this.vao = vao;
   }
 
   setMaterial(material){
     this.material = material;
   }
-  
+
   animate(value){
     this.animated = value;
   }
@@ -22,6 +33,9 @@ class Object{
   resetObjectMatrix(){
     this.objectMatrix = mat4.create();
   }
+
+  /*--------------------GETTERS-------------------*/
+
   getIndices(){
     return this.indices;
   }
@@ -50,7 +64,17 @@ class Object{
     return this.objectMatrix;
   }
 
+  getVao(){
+    return this.vao;
+  }
+
+  getCenter(){
+    return this.center;
+  }
+
   isAnimated(){
     return this.animated;
   }
+
+
 }

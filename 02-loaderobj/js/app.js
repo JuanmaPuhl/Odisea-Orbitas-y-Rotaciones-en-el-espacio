@@ -9,14 +9,7 @@ var parsedOBJ = null; //Archivos OBJ Traducidos para que los pueda leer webgl2
 var parsedOBJ2 = null;
 var parsedOBJ3 = null;
 var parsedOBJ4 = null;
-var indexCount = 0; //Contador de indices. Sirve para saber cuantas veces ejecutar el draw
-var indexCount2= 0;
-var indexCount3=0;
-var indexCount4=0;
-var obj1center=[]; //Centro de cada objeto
-var obj2center=[];
-var obj3center=[];
-var obj4center=[];
+
 
 //Uniform locations.
 var u_satelliteMatrix;
@@ -31,7 +24,9 @@ var u_ks;
 var u_normalMatrix;
 var u_coefEspec;
 var u_posL;
-
+var u_ia;
+var u_id;
+var u_is;
 
 
 //Uniform values.
@@ -60,10 +55,10 @@ var animated = [];
 var then = 0;
 var rotationSpeed = 30;
 
-
 //MATERIALES
 var jade;
 var gold;
+var rock;
 
 //OBJETOS
 var obj_planet;
@@ -71,6 +66,11 @@ var obj_satellite;
 var obj_ring1;
 var obj_ring2;
 
+//LUCES
+var light;
+var light_position = [0.0,10.0,100.0,0.0];
+var light_intensity = [[1.0,1.0,1.0],[1.0,1.0,1.0],[1.0,1.0,1.0]];
+var light_angle = 0.0;
 
 /*Esta funcion se ejecuta al cargar la pagina. Carga todos los objetos para que luego sean dibujados, asi como los valores iniciales
 de las variables a utilizar*/
@@ -83,47 +83,12 @@ function onLoad() {
 	cargarSliders();//Cargo los sliders
 
 	obj_planet = new Object(parsedOBJ);
+	obj_satellite = new Object(parsedOBJ2);
+	obj_ring1 = new Object(parsedOBJ3);
+	obj_ring2 = new Object(parsedOBJ4);
 
-	//let indices = parsedOBJ.indices;//Planeta
-	//Tengo que convertir los indices de triangulos a indices de lineas
-	//indices = convertIndexes(indices);
-	let indices2 = parsedOBJ2.indices;//Satelite
-	//indices2 = convertIndexes(indices2);
-	let indices3 = parsedOBJ3.indices;//Anillo interior
-	//indices3 = convertIndexes(indices3);
-	let indices4 = parsedOBJ4.indices;//Anillo exterior
-	//indices4 = convertIndexes(indices4);
+	light = new Light(light_position , light_intensity , light_angle);
 
-
-	//indexCount = indices.length;
-	indexCount2 = indices2.length;
-	indexCount3 = indices3.length;
-	indexCount4 = indices4.length;
-
-	let positions = parsedOBJ.positions;
-	let colors = parsedOBJ.positions;//Will use position coordinates as colors (as example)
-	let positions2 = parsedOBJ2.positions;
-	let colors2 = parsedOBJ2.positions;//Will use position coordinates as colors (as example)
-	let positions3 = parsedOBJ3.positions;
-	let colors3 = parsedOBJ3.positions;
-	let positions4 = parsedOBJ4.positions;
-	let colors4 = parsedOBJ4.positions;
-
-	let normals = parsedOBJ.normals;
-	let normals2 = parsedOBJ2.normals;
-	let normals3 = parsedOBJ3.normals;
-	let normals4 = parsedOBJ4.normals;
-	console.log("Normales= "+normals);
-
-	/*Calculo de las Bounding Boxes para todos los objetos*/
-	obj1center=Utils.boundingBoxCenter(parsedOBJ.positions);
-	console.log(obj1center);
-	obj2center=Utils.boundingBoxCenter(parsedOBJ2.positions);
-	console.log(obj2center);
-	obj3center=Utils.boundingBoxCenter(parsedOBJ3.positions);
-	console.log(obj3center);
-	obj4center=Utils.boundingBoxCenter(parsedOBJ4.positions);
-	console.log(obj4center);
 	//vertexShaderSource y fragmentShaderSource estan importadas en index.html <script>
 	shaderProgram = ShaderProgramHelper.create(vertexShaderSource, fragmentShaderSource);
 	let posLocation = gl.getAttribLocation(shaderProgram, 'vertexPos');
@@ -141,36 +106,43 @@ function onLoad() {
 	u_normalMatrix = gl.getUniformLocation(shaderProgram, 'normalMatrix');
 	u_coefEspec = gl.getUniformLocation(shaderProgram, 'coefEspec');
 	u_posL = gl.getUniformLocation(shaderProgram, 'posL');
+	u_ia = gl.getUniformLocation(shaderProgram, 'ia');
+	u_id = gl.getUniformLocation(shaderProgram, 'id');
+	u_is = gl.getUniformLocation(shaderProgram, 'is');
+
 
 	//Para el planeta
 	let vertexAttributeInfoArray = [
-		new VertexAttributeInfo(positions, posLocation, 3),
-		new VertexAttributeInfo(colors, colLocation, 3),
-		new VertexAttributeInfo(normals, normalMatrix_location, 3)
+		new VertexAttributeInfo(obj_planet.getPositions(), posLocation, 3),
+		new VertexAttributeInfo(obj_planet.getColors(), colLocation, 3),
+		new VertexAttributeInfo(obj_planet.getNormals(), normalMatrix_location, 3)
 	];
 	//Para el satelite
 	let vertexAttributeInfoArray2 = [
-		new VertexAttributeInfo(positions2, posLocation, 3),
-		new VertexAttributeInfo(colors2, colLocation, 3),
-		new VertexAttributeInfo(normals2, normalMatrix_location, 3)
+		new VertexAttributeInfo(obj_satellite.getPositions(), posLocation, 3),
+		new VertexAttributeInfo(obj_satellite.getColors(), colLocation, 3),
+		new VertexAttributeInfo(obj_satellite.getNormals(), normalMatrix_location, 3)
 	];
 	//Para el anillo interior
 	let vertexAttributeInfoArray3 = [
-		new VertexAttributeInfo(positions3, posLocation, 3),
-		new VertexAttributeInfo(colors3, colLocation, 3),
-		new VertexAttributeInfo(normals3, normalMatrix_location, 3)
+		new VertexAttributeInfo(obj_ring1.getPositions(), posLocation, 3),
+		new VertexAttributeInfo(obj_ring1.getColors(), colLocation, 3),
+		new VertexAttributeInfo(obj_ring1.getNormals(), normalMatrix_location, 3)
 	];
 	//Para el anillo exterior
 	let vertexAttributeInfoArray4 = [
-		new VertexAttributeInfo(positions4, posLocation, 3),
-		new VertexAttributeInfo(colors4, colLocation, 3),
-		new VertexAttributeInfo(normals4, normalMatrix_location, 3)
+		new VertexAttributeInfo(obj_ring2.getPositions(), posLocation, 3),
+		new VertexAttributeInfo(obj_ring2.getColors(), colLocation, 3),
+		new VertexAttributeInfo(obj_ring2.getNormals(), normalMatrix_location, 3)
 	];
-	/*Creacion de VAOS*/
-	vao = VAOHelper.create(obj_planet.getIndices(), vertexAttributeInfoArray);//Creo el vao del planeta
-	vao2= VAOHelper.create(indices2, vertexAttributeInfoArray2);//Creo el vao del satelite
-	vao3= VAOHelper.create(indices3, vertexAttributeInfoArray3);//Creo el vao del anillo interior
-	vao4= VAOHelper.create(indices4, vertexAttributeInfoArray4);//Creo el vao del anillo exterior
+
+	//Asigno VAOs
+	obj_planet.setVao(VAOHelper.create(obj_planet.getIndices(), vertexAttributeInfoArray));
+	obj_satellite.setVao(VAOHelper.create(obj_satellite.getIndices(), vertexAttributeInfoArray2));
+	obj_ring1.setVao(VAOHelper.create(obj_ring1.getIndices(), vertexAttributeInfoArray3));
+	obj_ring2.setVao(VAOHelper.create(obj_ring2.getIndices(), vertexAttributeInfoArray4));
+
+
 	gl.clearColor(0.05, 0.05, 0.05, 1.0); //Cambio el color de fondo
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	/*Creacion de camara*/
@@ -183,10 +155,13 @@ function onLoad() {
 	projMatrix=camaraEsferica.createPerspectiveMatrix(fov,near,far,aspect);//Calculo la matriz de proyeccion
 
 	//Creacion de MATERIALES
-	jade = new Material([0.135,0.2225,0.1575,0.95],[0.54,0.89,0.63,0.95],[0.316228,0.316228,0.316228,0.95],12.8);
-	gold = new Material([0.24725,0.1995,0.0745,1.0],[0.75164,0.60648,0.22648,1.0],[0.628281,0.555802,0.366065,1.0],51.2);
+	crearMateriales();
+
 
 	obj_planet.setMaterial(gold);
+	obj_satellite.setMaterial(gold);
+	obj_ring1.setMaterial(rock);
+	obj_ring2.setMaterial(jade);
 
 	gl.enable(gl.DEPTH_TEST);//Activo esta opcion para que dibuje segun la posicion en Z. Si hay dos fragmentos con las mismas x,y pero distinta zIndex
 	//Dibujara los que esten mas cerca de la pantalla.
@@ -224,10 +199,9 @@ function onRender(now) {
 	refreshAngles(deltaTime); //Actualizo los angulos teniendo en cuenta el desfasaje de tiempo
 	/*Reinicio Matrices*/
 	obj_planet.resetObjectMatrix();
-	//planetMatrix = mat4.create(); //Reinicio la matriz de planeta
-	satelliteMatrix = mat4.create(); //Reinicio la matriz de satelite
-	ring1Matrix = mat4.create(); //Reinicio la matriz del anillo 1
-	ring2Matrix = mat4.create(); //Reinicio la matriz del anillo 2
+	obj_satellite.resetObjectMatrix();
+	obj_ring1.resetObjectMatrix();
+	obj_ring2.resetObjectMatrix();
 	/*Actualizo las transformaciones para cada uno de los objetos*/
 	rotatePlanet();//Roto el planeta
 	rotateSatellite();//Roto el satelite
@@ -238,6 +212,7 @@ function onRender(now) {
 	rotateRing2();//Roto el anillo exterior
 	scaleRing1();//Escalo el anillo 1
 	scaleRing2();//Escalo el anillo 2
+
 	/*--------------------------Control de camara --------------------------*/
 	if(animated[5]) //Si esta rotando automaticamente a la izquierda...
 		viewMatrix = camaraEsferica.quaternionCamera(glMatrix.toRadian(rotationAngle[5]),glMatrix.toRadian(angle[4])); //Roto segun el angulo de rotacion 5
@@ -252,46 +227,50 @@ function onRender(now) {
 	/*Comienzo a preparar para dibujar*/
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	gl.useProgram(shaderProgram);
-	gl.uniformMatrix4fv(u_planetMatrix, false, obj_planet.getObjectMatrix());
-	gl.uniformMatrix4fv(u_viewMatrix, false, viewMatrix);
-	gl.uniformMatrix4fv(u_projMatrix, false, projMatrix);
 
-
-	gl.uniform4fv(u_ka,obj_planet.getMaterial().getKa());
-	gl.uniform4fv(u_kd,obj_planet.getMaterial().getKd());
-	gl.uniform4fv(u_ks,obj_planet.getMaterial().getKs());
-	gl.uniform1f(u_coefEspec,obj_planet.getMaterial().getShininess());
-
-
-	gl.uniform4fv(u_posL, [20.0,0.0,0.0,0.0]);
-
-
-	gl.uniformMatrix4fv(u_normalMatrix, false, obj_planet.getObjectMatrix());
-
-	gl.bindVertexArray(vao);//Asocio el vao del planeta
-	gl.drawElements(gl.TRIANGLES, obj_planet.getIndexCount(), gl.UNSIGNED_INT, 0);//Dibuja planeta
-	gl.bindVertexArray(null);
-	gl.uniformMatrix4fv(u_satelliteMatrix, false, satelliteMatrix)
-	gl.uniformMatrix4fv(u_normalMatrix, false, satelliteMatrix);
-	gl.bindVertexArray(vao2);//Asocio el vao del satelite
-	gl.drawElements(gl.TRIANGLES, indexCount2, gl.UNSIGNED_INT, 0);//Dibuja satelite
-	gl.uniformMatrix4fv(u_ring1Matrix, false, ring1Matrix);
-	gl.uniformMatrix4fv(u_normalMatrix, false, ring1Matrix);
-	gl.uniform4fv(u_ka,jade.getKa());
-	gl.uniform4fv(u_kd, jade.getKd());
-	gl.uniform4fv(u_ks, jade.getKs());
-	gl.uniform1f(u_coefEspec, jade.getShininess());
-	gl.bindVertexArray(vao3);//Asocio el vao del anillo 1
-	gl.drawElements(gl.TRIANGLES, indexCount3, gl.UNSIGNED_INT, 0);//Dibuja anillo 1
-	gl.bindVertexArray(null);
-	gl.uniformMatrix4fv(u_ring2Matrix, false, ring2Matrix);
-	gl.uniformMatrix4fv(u_normalMatrix, false, ring2Matrix);
-	gl.bindVertexArray(vao4);//Asocio el vao del anillo 2
-	gl.drawElements(gl.TRIANGLES, indexCount4, gl.UNSIGNED_INT, 0);//Dibuja anillo 2
-	gl.bindVertexArray(null);
-	gl.bindVertexArray(null);
+	passLight(light);/*-----------------------PASO LA LUZ--------------------------*/
+	passCamera();
+	drawObject(obj_planet);
+	drawObject(obj_satellite);
+	drawObject(obj_ring1);
+	drawObject(obj_ring2);
 	gl.useProgram(null);
 	requestAnimationFrame(onRender); //Continua el bucle
+}
+
+
+function passCamera(){
+	gl.uniformMatrix4fv(u_viewMatrix, false, viewMatrix);
+	gl.uniformMatrix4fv(u_projMatrix, false, projMatrix);
+}
+
+function passLight(light){
+	gl.uniform4fv(u_posL, light.getLightPosition());
+	gl.uniform3fv(u_ia, light.getIntensity()[0]);
+	gl.uniform3fv(u_id, light.getIntensity()[1]);
+	gl.uniform3fv(u_is, light.getIntensity()[2]);
+}
+
+function drawObject(object){
+	if(object===obj_planet)
+		gl.uniformMatrix4fv(u_planetMatrix, false, object.getObjectMatrix());
+	if(object===obj_satellite)
+		gl.uniformMatrix4fv(u_satelliteMatrix, false, object.getObjectMatrix());
+	if(object===obj_ring1)
+		gl.uniformMatrix4fv(u_ring1Matrix, false, object.getObjectMatrix());
+	if(object===obj_ring2)
+		gl.uniformMatrix4fv(u_ring2Matrix, false, object.getObjectMatrix())
+
+	gl.uniformMatrix4fv(u_normalMatrix, false, object.getObjectMatrix());
+	/*-----------------------PASO LOS VALORES DEL MATERIAL--------------------*/
+	gl.uniform4fv(u_ka,object.getMaterial().getKa());
+	gl.uniform4fv(u_kd,object.getMaterial().getKd());
+	gl.uniform4fv(u_ks,object.getMaterial().getKs());
+	gl.uniform1f(u_coefEspec,object.getMaterial().getShininess());
+
+	gl.bindVertexArray(object.getVao());//Asocio el vao del planeta
+	gl.drawElements(gl.TRIANGLES, object.getIndexCount(), gl.UNSIGNED_INT, 0);//Dibuja planeta
+	gl.bindVertexArray(null);
 }
 
 /*Funcion para refrescar los angulos de rotacion automatica*/
@@ -339,59 +318,62 @@ function refreshAngles(deltaTime){
 function rotateRing1(){
 	let escalar1Y = 2; //Establezco el valor del escalar por el cual multiplicare al angulo de rotacion segun Y
 	let escalar1Z = -1; //Establezco el valor del escalar por el cual multiplicare al angulo de rotacion segun Z
+	let matrix = obj_ring1.getObjectMatrix();
 	let rotationMatrix = mat4.create();//Creo una matriz de 4 dimensiones. Esta sera la matriz de rotacion
 	if(animated[0]){ //Si el planeta esta siendo animado...
 		mat4.fromYRotation(rotationMatrix, glMatrix.toRadian(escalar1Y * rotationAngle[0]));//Roto con respecto a Y con el angulo de rotacion
-		mat4.multiply(ring1Matrix, rotationMatrix, ring1Matrix); //Aplico la rotacion
+		mat4.multiply(matrix, rotationMatrix, matrix); //Aplico la rotacion
 		mat4.fromZRotation(rotationMatrix, glMatrix.toRadian(escalar1Z * rotationAngle[0])); //Roto con respecto a Z con el angulo de rotacion
 	}else
 		if(animated[7]){ //Si el planeta esta siendo animado...
 		mat4.fromYRotation(rotationMatrix, glMatrix.toRadian(escalar1Y * rotationAngle[7]));//Roto con respecto a Y con el angulo de rotacion
-		mat4.multiply(ring1Matrix, rotationMatrix, ring1Matrix);//Aplico Rotacion
+		mat4.multiply(matrix, rotationMatrix, matrix);//Aplico Rotacion
 		mat4.fromZRotation(rotationMatrix, glMatrix.toRadian(escalar1Z * rotationAngle[7]));//Roto con respecto a Z con el angulo de rotacion
 	}
 	else{ //Sino...
 		mat4.fromYRotation(rotationMatrix, glMatrix.toRadian(escalar1Y * angle[0]));//Roto con respecto a Y con el angulo del slider
-		mat4.multiply(ring1Matrix, rotationMatrix, ring1Matrix);//Aplico la rotacion
+		mat4.multiply(matrix, rotationMatrix, matrix);//Aplico la rotacion
 		mat4.fromZRotation(rotationMatrix, glMatrix.toRadian(escalar1Z * angle[0]));//Roto con respecto a Z con el angulo del slider
 	}
-	mat4.multiply(ring1Matrix, rotationMatrix, ring1Matrix);//Aplico rotacion y escalo
+	mat4.multiply(matrix, rotationMatrix, matrix);//Aplico rotacion y escalo
 	let anguloX1 = 62;//Establezco el valor del escalar por el cual multiplicare al angulo de rotacion segun X
 	mat4.fromXRotation(rotationMatrix, glMatrix.toRadian(anguloX1));//Roto con respecto a X
-	mat4.multiply(ring1Matrix, rotationMatrix, ring1Matrix);//Aplico la rotacion
+	mat4.multiply(matrix, rotationMatrix, matrix);//Aplico la rotacion
 }
 
 /*Funcion para rotar el anillo exterior*/
 function rotateRing2(){
 	let escalar2Y = -1; //Establezco el valor del escalar por el cual multiplicare al angulo de rotacion segun Y
 	let escalar2Z = 1; //Establezco el valor del escalar por el cual multiplicare al angulo de rotacion segun Z
+	let matrix = obj_ring2.getObjectMatrix();
 	let rotationMatrix = mat4.create();//Creo una matriz de 4 dimensiones. Esta sera la matriz de rotacion
 	if(animated[0]){ //Si el planeta esta siendo animado...
 		mat4.fromYRotation(rotationMatrix, glMatrix.toRadian(escalar2Y * rotationAngle[0]));//Roto con respecto a Y con el angulo de rotacion
-		mat4.multiply(ring2Matrix, rotationMatrix, ring2Matrix);//Aplico Rotacion
+		mat4.multiply(matrix, rotationMatrix, matrix);//Aplico Rotacion
 		mat4.fromZRotation(rotationMatrix, glMatrix.toRadian(escalar2Z * rotationAngle[0]));//Roto con respecto a Z con el angulo de rotacion
 	}
 	else
 		if(animated[7]){ //Si el planeta esta siendo animado...
 			mat4.fromYRotation(rotationMatrix, glMatrix.toRadian(escalar2Y * rotationAngle[7]));//Roto con respecto a Y con el angulo de rotacion
-			mat4.multiply(ring2Matrix, rotationMatrix, ring2Matrix);//Aplico Rotacion
+			mat4.multiply(matrix, rotationMatrix, matrix);//Aplico Rotacion
 			mat4.fromZRotation(rotationMatrix, glMatrix.toRadian(escalar2Z * rotationAngle[7]));//Roto con respecto a Z con el angulo de rotacion
 		}
 		else{ //Sino...
 			mat4.fromYRotation(rotationMatrix, glMatrix.toRadian(escalar2Y * angle[0]));//Roto con respecto a Y con el angulo del slider
-			mat4.multiply(ring2Matrix, rotationMatrix, ring2Matrix);//Aplico Rotacion
+			mat4.multiply(matrix, rotationMatrix, matrix);//Aplico Rotacion
 			mat4.fromZRotation(rotationMatrix, glMatrix.toRadian(escalar2Z * angle[0]));//Roto con respecto a Z con el angulo del slider
 		}
-	mat4.multiply(ring2Matrix, rotationMatrix, ring2Matrix);//Aplico la rotacion
+	mat4.multiply(matrix, rotationMatrix, matrix);//Aplico la rotacion
 	let anguloX2 = 21; //Establezco el valor del escalar por el cual multiplicare al angulo de rotacion segun X
-    mat4.fromXRotation(rotationMatrix, glMatrix.toRadian(anguloX2));//Roto con respecto a X
-	mat4.multiply(ring2Matrix, rotationMatrix, ring2Matrix);//Aplico la rotacion
+  mat4.fromXRotation(rotationMatrix, glMatrix.toRadian(anguloX2));//Roto con respecto a X
+	mat4.multiply(matrix, rotationMatrix, matrix);//Aplico la rotacion
 }
 
 /*Funcion para rotar el planeta*/
 function rotatePlanet(){
 	let rotationMatrix = mat4.create();//Creo una matriz de 4 dimensiones. Esta sera la matriz de rotacion
 	let translationMatrix = mat4.create();//Creo una matriz de 4 dimensiones. Esta sera la matriz de traslacion
+	let matrix = obj_planet.getObjectMatrix();
 	if(animated[0])//Si esta siendo animado...
 		//Creo matriz de rotacion para el planeta con el angulo de rotacion automatico
 		mat4.fromYRotation(rotationMatrix, glMatrix.toRadian(rotationAngle[0]));
@@ -402,29 +384,32 @@ function rotatePlanet(){
 			else//sino... creo matriz de rotacion con el angulo del slider
 				mat4.fromYRotation(rotationMatrix, glMatrix.toRadian(angle[0]));
 	//Aplico transformaciones al planeta
-	mat4.multiply(obj_planet.getObjectMatrix(), rotationMatrix, obj_planet.getObjectMatrix());
+	mat4.multiply(matrix, rotationMatrix, matrix);
 }
 
 /*Funcion para escalar el anillo interior*/
 function scaleRing1(){
 	let scaleMatrix = mat4.create();//Creo una matriz de 4 dimensiones. Esta sera la matriz de escalado
+	let matrix = obj_ring1.getObjectMatrix();
 	let scale = [0.079,0.079,0.079];//Seteo el vector de escalado
 	mat4.fromScaling(scaleMatrix,scale);//Creo la matriz de escalado
-	mat4.multiply(ring1Matrix, scaleMatrix, ring1Matrix);//Aplico escalado
+	mat4.multiply(matrix, scaleMatrix, matrix);//Aplico escalado
 }
 
 /*Funcion para escalar el anillo exterior*/
 function scaleRing2(){
 	let scaleMatrix = mat4.create();//Creo una matriz de 4 dimensiones. Esta sera la matriz de escalado
+	let matrix = obj_ring2.getObjectMatrix();
 	let scale = [0.1,0.1,0.1];//Setep el vector de escalado
 	mat4.fromScaling(scaleMatrix,scale);//Creo la matriz de escalado
-	mat4.multiply(ring2Matrix, scaleMatrix, ring2Matrix);//Aplico escalado
+	mat4.multiply(matrix, scaleMatrix, matrix);//Aplico escalado
 }
 
 /*Funcion para rotar el satelite*/
 function rotateSatellite(){
 	let rotationMatrix = mat4.create();//Creo una matriz de 4 dimensiones. Esta sera la matriz de rotacion
 	let translationMatrix = mat4.create();//Creo una matriz de 4 dimensiones. Esta sera la matriz de traslacion
+	let matrix = obj_satellite.getObjectMatrix();
 	if(animated[1])//Si esta siendo animado
 		//Creo matriz de rotacion para el satelite
 		mat4.fromZRotation(rotationMatrix, glMatrix.toRadian(rotationAngle[1]));
@@ -435,17 +420,19 @@ function rotateSatellite(){
 		mat4.fromZRotation(rotationMatrix, glMatrix.toRadian(-angle[1]));
 	//Obtengo las componentes del punto central de rotacion del objeto y multiplico por -1 para obtener
 	//el vector de traslacion al 0,0,0
-	let vecTranslation =[-1*parseFloat(obj2center[0]),-1*parseFloat(obj2center[1]),-1*parseFloat(obj2center[2])];
+	let center = obj_satellite.getCenter();
+	let vecTranslation =[-1*parseFloat(center[0]),-1*parseFloat(center[1]),-1*parseFloat(center[2])];
 	mat4.fromTranslation(translationMatrix,vecTranslation);//Creo matriz de traslacion
-	mat4.multiply(satelliteMatrix,translationMatrix, satelliteMatrix);//Traslado el satelite al 0,0,0
-	mat4.multiply(satelliteMatrix, rotationMatrix, satelliteMatrix);//Roto el satelite
+	mat4.multiply(matrix,translationMatrix, matrix);//Traslado el satelite al 0,0,0
+	mat4.multiply(matrix, rotationMatrix, matrix);//Roto el satelite
 	mat4.invert(translationMatrix,translationMatrix)//Calculo la matriz de traslacion al punto original
-	mat4.multiply(satelliteMatrix,translationMatrix,satelliteMatrix);//Vuelvo a pos normal
+	mat4.multiply(matrix,translationMatrix,matrix);//Vuelvo a pos normal
 }
 
 /*Funcion para orbitar el satelite*/
 function orbitSatellite(){
 	let rotationMatrix = mat4.create();//Creo una matriz de 4 dimensiones. Esta sera la matriz de rotacion
+	let matrix = obj_satellite.getObjectMatrix();
 	if(animated[2])//Si esta siendo animado... Creo matriz de rotacion en orbita para el satelite con el angulo de rot automatica
 		mat4.fromYRotation(rotationMatrix, glMatrix.toRadian(-rotationAngle[2]));
 		else
@@ -453,23 +440,25 @@ function orbitSatellite(){
 		mat4.fromYRotation(rotationMatrix, glMatrix.toRadian(rotationAngle[9]));
 	else//Sino... creo matriz de rotacion con el angulo del slider
 		mat4.fromYRotation(rotationMatrix, glMatrix.toRadian(-angle[2]));
-	mat4.multiply(satelliteMatrix, rotationMatrix, satelliteMatrix);//Muevo al satelite por la orbita
+	mat4.multiply(matrix, rotationMatrix, matrix);//Muevo al satelite por la orbita
 }
 
 /*Funcion para escalar el satelite*/
 function scaleSatellite(){
+	let matrix = obj_satellite.getObjectMatrix();
 	let scale = [0.09,0.09,0.09];//Creo el vector de escalado
 	let scaleMatrix = mat4.create();//Creo una matriz de 4 dimensiones. Esta sera la matriz de escalado
 	mat4.fromScaling(scaleMatrix,scale);//Creo la matriz de escalado
-	mat4.multiply(satelliteMatrix, scaleMatrix, satelliteMatrix);//Aplico el escalado
+	mat4.multiply(matrix, scaleMatrix, matrix);//Aplico el escalado
 }
 
 /*Funcion para escalar el planeta*/
 function scalePlanet(){
+	let matrix = obj_planet.getObjectMatrix();
 	let scale = [0.08,0.08,0.08];//Creo el vector de escalado
 	let scaleMatrix = mat4.create();//Creo una matriz de 4 dimensiones. Esta sera la matriz de escalado
 	mat4.fromScaling(scaleMatrix,scale);//Creo la matriz de escalado
-	mat4.multiply(obj_planet.getObjectMatrix(), scaleMatrix, obj_planet.getObjectMatrix());//Aplico el escalado
+	mat4.multiply(matrix, scaleMatrix, matrix);//Aplico el escalado
 }
 
 /*Funcion para cargar los objetos*/
