@@ -28,7 +28,7 @@ void main(){
     if(dot(L,N)< 0.0){
         specBlinnPhong = 0.0;
     }
-    colorFrag = ka + atenuacion * kd * difuso + ks * specBlinnPhong;
+    colorFrag =  vec4(ia,1.0) * ka + vec4(id,1.0) * atenuacion * (kd * difuso + vec4(is,1.0) * ks * specBlinnPhong);
 
 }
 `

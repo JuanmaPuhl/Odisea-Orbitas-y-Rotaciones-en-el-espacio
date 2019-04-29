@@ -27,6 +27,7 @@ var u_posL;
 var u_ia;
 var u_id;
 var u_is;
+var u_MV;
 
 
 //Uniform values.
@@ -68,8 +69,8 @@ var obj_ring2;
 
 //LUCES
 var light;
-var light_position = [0.0,10.0,100.0,0.0];
-var light_intensity = [[1.0,1.0,1.0],[1.0,1.0,1.0],[1.0,1.0,1.0]];
+var light_position = [0.0,1000.0,1000.0,0.0];
+var light_intensity = [[0.01,0.01,0.01],[1.0,1.0,1.0],[1.0,1.0,1.0]];
 var light_angle = 0.0;
 
 /*Esta funcion se ejecuta al cargar la pagina. Carga todos los objetos para que luego sean dibujados, asi como los valores iniciales
@@ -91,9 +92,11 @@ function onLoad() {
 
 	//vertexShaderSource y fragmentShaderSource estan importadas en index.html <script>
 	shaderProgram = ShaderProgramHelper.create(vertexShaderSource, fragmentShaderSource);
+
+
 	let posLocation = gl.getAttribLocation(shaderProgram, 'vertexPos');
 	let colLocation = gl.getAttribLocation(shaderProgram, 'vertexCol');
-	let normalMatrix_location = gl.getAttribLocation(shaderProgram, 'vertexNormal');
+	let vertexNormal_location = gl.getAttribLocation(shaderProgram, 'vertexNormal');
 	u_satelliteMatrix = gl.getUniformLocation(shaderProgram, 'modelMatrix');
 	u_planetMatrix = gl.getUniformLocation(shaderProgram, 'modelMatrix');
 	u_ring1Matrix = gl.getUniformLocation(shaderProgram, 'modelMatrix');
@@ -109,31 +112,32 @@ function onLoad() {
 	u_ia = gl.getUniformLocation(shaderProgram, 'ia');
 	u_id = gl.getUniformLocation(shaderProgram, 'id');
 	u_is = gl.getUniformLocation(shaderProgram, 'is');
+	u_MV = gl.getUniformLocation(shaderProgram, 'MV');
 
 
 	//Para el planeta
 	let vertexAttributeInfoArray = [
 		new VertexAttributeInfo(obj_planet.getPositions(), posLocation, 3),
 		new VertexAttributeInfo(obj_planet.getColors(), colLocation, 3),
-		new VertexAttributeInfo(obj_planet.getNormals(), normalMatrix_location, 3)
+		new VertexAttributeInfo(obj_planet.getNormals(), vertexNormal_location, 3)
 	];
 	//Para el satelite
 	let vertexAttributeInfoArray2 = [
 		new VertexAttributeInfo(obj_satellite.getPositions(), posLocation, 3),
 		new VertexAttributeInfo(obj_satellite.getColors(), colLocation, 3),
-		new VertexAttributeInfo(obj_satellite.getNormals(), normalMatrix_location, 3)
+		new VertexAttributeInfo(obj_satellite.getNormals(), vertexNormal_location, 3)
 	];
 	//Para el anillo interior
 	let vertexAttributeInfoArray3 = [
 		new VertexAttributeInfo(obj_ring1.getPositions(), posLocation, 3),
 		new VertexAttributeInfo(obj_ring1.getColors(), colLocation, 3),
-		new VertexAttributeInfo(obj_ring1.getNormals(), normalMatrix_location, 3)
+		new VertexAttributeInfo(obj_ring1.getNormals(), vertexNormal_location, 3)
 	];
 	//Para el anillo exterior
 	let vertexAttributeInfoArray4 = [
 		new VertexAttributeInfo(obj_ring2.getPositions(), posLocation, 3),
 		new VertexAttributeInfo(obj_ring2.getColors(), colLocation, 3),
-		new VertexAttributeInfo(obj_ring2.getNormals(), normalMatrix_location, 3)
+		new VertexAttributeInfo(obj_ring2.getNormals(), vertexNormal_location, 3)
 	];
 
 	//Asigno VAOs
@@ -156,7 +160,6 @@ function onLoad() {
 
 	//Creacion de MATERIALES
 	crearMateriales();
-
 
 	obj_planet.setMaterial(gold);
 	obj_satellite.setMaterial(gold);
@@ -198,6 +201,22 @@ function onRender(now) {
 	then = now; //Actualizo el valor
 	refreshAngles(deltaTime); //Actualizo los angulos teniendo en cuenta el desfasaje de tiempo
 	/*Reinicio Matrices*/
+	refreshFrame();
+
+	/*Comienzo a preparar para dibujar*/
+	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+	gl.useProgram(shaderProgram);
+	passLight(light);
+	passCamera();
+	drawObject(obj_planet);
+	//drawObject(obj_satellite);
+	//drawObject(obj_ring1);
+	//drawObject(obj_ring2);
+	gl.useProgram(null);
+	requestAnimationFrame(onRender); //Continua el bucle
+}
+
+function refreshFrame(){
 	obj_planet.resetObjectMatrix();
 	obj_satellite.resetObjectMatrix();
 	obj_ring1.resetObjectMatrix();
@@ -207,13 +226,15 @@ function onRender(now) {
 	rotateSatellite();//Roto el satelite
 	orbitSatellite();//Orbito el satelite
 	scaleSatellite();//Escalo el satelite
-	scalePlanet();//Escalo el planeta
+	//scalePlanet();//Escalo el planeta
 	rotateRing1();//Roto el anillo interior
 	rotateRing2();//Roto el anillo exterior
 	scaleRing1();//Escalo el anillo 1
 	scaleRing2();//Escalo el anillo 2
+	refreshCamera();
+}
 
-	/*--------------------------Control de camara --------------------------*/
+function refreshCamera(){
 	if(animated[5]) //Si esta rotando automaticamente a la izquierda...
 		viewMatrix = camaraEsferica.quaternionCamera(glMatrix.toRadian(rotationAngle[5]),glMatrix.toRadian(angle[4])); //Roto segun el angulo de rotacion 5
 	else
@@ -223,21 +244,7 @@ function onRender(now) {
 			viewMatrix = camaraEsferica.quaternionCamera(glMatrix.toRadian(angle[5]),glMatrix.toRadian(angle[4])); //Roto segun el angulo del slider
 		}
 	projMatrix=camaraEsferica.zoom(angle[3]);//Vuelvo a calcular la matriz de proyeccion (Perspectiva)
-
-	/*Comienzo a preparar para dibujar*/
-	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-	gl.useProgram(shaderProgram);
-
-	passLight(light);/*-----------------------PASO LA LUZ--------------------------*/
-	passCamera();
-	drawObject(obj_planet);
-	drawObject(obj_satellite);
-	drawObject(obj_ring1);
-	drawObject(obj_ring2);
-	gl.useProgram(null);
-	requestAnimationFrame(onRender); //Continua el bucle
 }
-
 
 function passCamera(){
 	gl.uniformMatrix4fv(u_viewMatrix, false, viewMatrix);
@@ -252,21 +259,30 @@ function passLight(light){
 }
 
 function drawObject(object){
+	let matrix = object.getObjectMatrix();
 	if(object===obj_planet)
-		gl.uniformMatrix4fv(u_planetMatrix, false, object.getObjectMatrix());
+		gl.uniformMatrix4fv(u_planetMatrix, false, matrix);
 	if(object===obj_satellite)
-		gl.uniformMatrix4fv(u_satelliteMatrix, false, object.getObjectMatrix());
+		gl.uniformMatrix4fv(u_satelliteMatrix, false, matrix);
 	if(object===obj_ring1)
-		gl.uniformMatrix4fv(u_ring1Matrix, false, object.getObjectMatrix());
+		gl.uniformMatrix4fv(u_ring1Matrix, false, matrix);
 	if(object===obj_ring2)
-		gl.uniformMatrix4fv(u_ring2Matrix, false, object.getObjectMatrix())
+		gl.uniformMatrix4fv(u_ring2Matrix, false, matrix);
 
-	gl.uniformMatrix4fv(u_normalMatrix, false, object.getObjectMatrix());
+	let MV = mat4.create();
+	mat4.multiply(MV , viewMatrix , matrix);
+
+	gl.uniformMatrix4fv(u_MV, false, MV);
+	mat4.invert(MV,MV);
+	mat4.transpose(MV,MV);
+	gl.uniformMatrix4fv(u_normalMatrix, false, MV);
+
+	let material = object.getMaterial();
 	/*-----------------------PASO LOS VALORES DEL MATERIAL--------------------*/
-	gl.uniform4fv(u_ka,object.getMaterial().getKa());
-	gl.uniform4fv(u_kd,object.getMaterial().getKd());
-	gl.uniform4fv(u_ks,object.getMaterial().getKs());
-	gl.uniform1f(u_coefEspec,object.getMaterial().getShininess());
+	gl.uniform4fv(u_ka,material.getKa());
+	gl.uniform4fv(u_kd,material.getKd());
+	gl.uniform4fv(u_ks,material.getKs());
+	gl.uniform1f(u_coefEspec,material.getShininess());
 
 	gl.bindVertexArray(object.getVao());//Asocio el vao del planeta
 	gl.drawElements(gl.TRIANGLES, object.getIndexCount(), gl.UNSIGNED_INT, 0);//Dibuja planeta
@@ -463,7 +479,7 @@ function scalePlanet(){
 
 /*Funcion para cargar los objetos*/
 function onModelLoad() {
-	parsedOBJ = OBJParser.parseFile(planeta); //Cargo el planeta
+	parsedOBJ = OBJParser.parseFile(teapotOBJSource); //Cargo el planeta
 	parsedOBJ2 = OBJParser.parseFile(satelite); //Cargo el satelite
 	parsedOBJ3 = OBJParser.parseFile(anillo1); //Cargo el anillo interior
 	parsedOBJ4 = OBJParser.parseFile(anillo2); //Cargo el anillo exterior

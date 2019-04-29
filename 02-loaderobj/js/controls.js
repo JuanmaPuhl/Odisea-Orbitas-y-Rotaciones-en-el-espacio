@@ -1,6 +1,7 @@
 function crearMateriales(){
 	jade = new Material([0.135,0.2225,0.1575,0.95],[0.54,0.89,0.63,0.95],[0.316228,0.316228,0.316228,0.95],12.8);
-	gold = new Material([0.24725,0.1995,0.0745,1.0],[0.75164,0.60648,0.22648,1.0],[0.628281,0.555802,0.366065,1.0],51.2);
+	//gold = new Material([0.24725,0.1995,0.0745,1.0],[0.75164,0.60648,0.22648,1.0],[0.628281,0.555802,0.366065,1.0],51.2);
+	gold = new Material([0.0,0.0,0.0,1.0],[0.75164,0.60648,0.22648,1.0],[0.628281,0.555802,0.366065,1.0],1000.0);
 	rock = new Material([0.2,0.1,0.0,1.0],[0.095466,0.114934,0.102149,1.0],[0.1,0.1,0.1,1.0],2.0);
 }
 
@@ -10,7 +11,6 @@ function cargarSliders(){
 	for(let i=0; i<6; i++){
 		slider[i]=document.getElementById("slider"+(i+1));//Guardo el slider
 		angle[i]=parseFloat(slider[i].defaultValue);//Actualizo el valor del angulo asociado al slider
-		console.log("i "+i + " "+angle[i]);
 		updateTextInput(i+1,slider[i].value);//Actualizo el valor del campo de texto asociado al slider
 	}
 	angle[3] = 91-slider[3].defaultValue; //Este es el angulo del slider del zoom
