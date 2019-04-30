@@ -21,7 +21,7 @@ void main(){
     vec3 L = normalize(vLE);
     vec3 V = normalize(vVE);
     vec3 H = normalize(L+V);
-    float atenuacion = 1.0/(1.0+(2.0*float(L)));
+    float atenuacion = 1.0/(1.0+(0.1*length(vLE)));
     //Calculo termino difuso + espec de Blinn-Phong
     float difuso = max(dot(L,N),0.0) ;
     float specBlinnPhong = pow(max(dot(N,H),0.0),coefEspec);

@@ -69,7 +69,7 @@ var obj_ring2;
 
 //LUCES
 var light;
-var light_position = [0.0,1000.0,1000.0,0.0];
+var light_position = [0.0,0.0,10.0,0.0];
 var light_intensity = [[0.01,0.01,0.01],[1.0,1.0,1.0],[1.0,1.0,1.0]];
 var light_angle = 0.0;
 

@@ -21,9 +21,8 @@ uniform vec4 posL; //Posicion luz
 void main(void){
     //mat4 MV =  viewMatrix * modelMatrix;
     gl_Position = projMatrix * MV * vec4(vertexPos, 1.0);
-
     vec3 posVE = vec3(MV*vec4(vertexPos,1.0));
-    vLE = normalize(vec3(posL-vec4(posVE,1.0)));
+    vLE = normalize(vec3(viewMatrix * posL-vec4(posVE,1.0)));
 
 
     //Transformar normal del espacio objeto al ojo
