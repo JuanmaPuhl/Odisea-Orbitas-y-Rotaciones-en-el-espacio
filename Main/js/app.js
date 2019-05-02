@@ -90,9 +90,6 @@ function onLoad() {
 	let colLocation = gl.getAttribLocation(shaderProgram, 'vertexCol');
 	let vertexNormal_location = gl.getAttribLocation(shaderProgram, 'vertexNormal');
 	u_modelMatrix = gl.getUniformLocation(shaderProgram, 'modelMatrix');
-	//u_planetMatrix = gl.getUniformLocation(shaderProgram, 'modelMatrix');
-	//u_ring1Matrix = gl.getUniformLocation(shaderProgram, 'modelMatrix');
-	//u_ring2Matrix = gl.getUniformLocation(shaderProgram, 'modelMatrix');
 	u_viewMatrix = gl.getUniformLocation(shaderProgram, 'viewMatrix');
 	u_projMatrix = gl.getUniformLocation(shaderProgram, 'projMatrix');
 	u_ka = gl.getUniformLocation(shaderProgram, 'ka');
