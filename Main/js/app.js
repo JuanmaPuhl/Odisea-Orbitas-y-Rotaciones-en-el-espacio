@@ -9,7 +9,7 @@ var parsedOBJ = null; //Archivos OBJ Traducidos para que los pueda leer webgl2
 var parsedOBJ2 = null;
 var parsedOBJ3 = null;
 var parsedOBJ4 = null;
-
+var parsedOBJ5 = null;
 
 //Uniform locations.
 var u_satelliteMatrix;
@@ -84,19 +84,15 @@ function onLoad() {
 	//Creacion de MATERIALES
 	crearMateriales();
 
-
-
 	//vertexShaderSource y fragmentShaderSource estan importadas en index.html <script>
 	shaderProgram = ShaderProgramHelper.create(vertexShaderSource, fragmentShaderSource);
-
-
 	let posLocation = gl.getAttribLocation(shaderProgram, 'vertexPos');
 	let colLocation = gl.getAttribLocation(shaderProgram, 'vertexCol');
 	let vertexNormal_location = gl.getAttribLocation(shaderProgram, 'vertexNormal');
-	u_satelliteMatrix = gl.getUniformLocation(shaderProgram, 'modelMatrix');
-	u_planetMatrix = gl.getUniformLocation(shaderProgram, 'modelMatrix');
-	u_ring1Matrix = gl.getUniformLocation(shaderProgram, 'modelMatrix');
-	u_ring2Matrix = gl.getUniformLocation(shaderProgram, 'modelMatrix');
+	u_modelMatrix = gl.getUniformLocation(shaderProgram, 'modelMatrix');
+	//u_planetMatrix = gl.getUniformLocation(shaderProgram, 'modelMatrix');
+	//u_ring1Matrix = gl.getUniformLocation(shaderProgram, 'modelMatrix');
+	//u_ring2Matrix = gl.getUniformLocation(shaderProgram, 'modelMatrix');
 	u_viewMatrix = gl.getUniformLocation(shaderProgram, 'viewMatrix');
 	u_projMatrix = gl.getUniformLocation(shaderProgram, 'projMatrix');
 	u_ka = gl.getUniformLocation(shaderProgram, 'ka');
@@ -115,8 +111,8 @@ function onLoad() {
 	obj_ring1 = new Object(parsedOBJ3);
 	obj_ring2 = new Object(parsedOBJ4);
 	for(let i = 0; i<24; i++){
-			balls.push(new Object(parsedOBJ));
-			balls[i].setMaterial(getMaterialByName("Gold"));
+			balls.push(new Object(parsedOBJ5));
+			balls[i].setMaterial(getMaterialByIndex(i%materials.length));
 			balls[i].setVao(VAOHelper.create(balls[i].getIndices(), [
 				new VertexAttributeInfo(balls[i].getPositions(), posLocation, 3),
 				new VertexAttributeInfo(balls[i].getColors(), colLocation, 3),
@@ -156,7 +152,6 @@ function onLoad() {
 	obj_ring1.setVao(VAOHelper.create(obj_ring1.getIndices(), vertexAttributeInfoArray3));
 	obj_ring2.setVao(VAOHelper.create(obj_ring2.getIndices(), vertexAttributeInfoArray4));
 
-
 	gl.clearColor(0.05, 0.05, 0.05, 1.0); //Cambio el color de fondo
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	/*Creacion de camara*/
@@ -167,8 +162,6 @@ function onLoad() {
 	let near = 0.1;//Establezco la distancia minima que renderizare
 	let far = 10.0;//Establezco la distancia maxima que renderizare
 	projMatrix=camaraEsferica.createPerspectiveMatrix(fov,near,far,aspect);//Calculo la matriz de proyeccion
-
-
 
 	obj_planet.setMaterial(getMaterialByName("Gold"));
 	obj_satellite.setMaterial(getMaterialByName("Gold"));
@@ -183,7 +176,7 @@ function onLoad() {
 /*Este metodo se llama constantemente gracias al metodo requestAnimationFrame(). En los sliders no
 se llama al onRender, sino que unicamente actualiza valores. Luego el onRender recupera esos valores y transforma
 los objetos como corresponda.*/
-function onRender(now) {
+function onRender(now){
 	now *= 0.001; //Tiempo actual
 	var deltaTime = now - then; //El tiempo que paso desde la ultima llamada al onRender y la actual
 	then = now; //Actualizo el valor
@@ -198,22 +191,21 @@ function onRender(now) {
 	passCamera();
 
 	for(let i = 0; i<balls.length; i++){
-			balls[i].resetObjectMatrix();
-			let matrix = balls[i].getObjectMatrix();
-			let translationMatrix = mat4.create();
-			let scaleMatrix = mat4.create();
-			mat4.fromTranslation(translationMatrix,[20,0,0]);
-			mat4.multiply(matrix,translationMatrix,matrix);
-			translationMatrix = mat4.create();
-			mat4.fromScaling(scaleMatrix,[0.08,0.08,0.08]);
-			mat4.fromTranslation(translationMatrix,[-2*i,0,0]);
-			mat4.multiply(matrix,translationMatrix,matrix);
-			mat4.multiply(matrix,scaleMatrix,matrix);
-			drawObject(balls[i]);
-
+		balls[i].resetObjectMatrix();
+		let matrix = balls[i].getObjectMatrix();
+		let translationMatrix = mat4.create();
+		let scaleMatrix = mat4.create();
+		mat4.fromTranslation(translationMatrix,[-10,0,20]);
+		mat4.multiply(matrix,translationMatrix,matrix);
+		translationMatrix = mat4.create();
+		mat4.fromScaling(scaleMatrix,[0.08,0.08,0.08]);
+		mat4.fromTranslation(translationMatrix,[1.1*i,0,-2*i]);
+		mat4.multiply(matrix,translationMatrix,matrix);
+		mat4.multiply(matrix,scaleMatrix,matrix);
+		drawObject(balls[i]);
 	}
 	//drawObject(obj_planet);
-	drawObject(obj_satellite);
+	//drawObject(obj_satellite);
 	//drawObject(obj_ring1);
 	//drawObject(obj_ring2);
 	gl.useProgram(null);
@@ -230,7 +222,7 @@ function refreshFrame(){
 	rotateSatellite();//Roto el satelite
 	orbitSatellite();//Orbito el satelite
 	scaleSatellite();//Escalo el satelite
-	//scalePlanet();//Escalo el planeta
+	scalePlanet();//Escalo el planeta
 	rotateRing1();//Roto el anillo interior
 	rotateRing2();//Roto el anillo exterior
 	scaleRing1();//Escalo el anillo 1
@@ -264,20 +256,7 @@ function passLight(light){
 
 function drawObject(object){
 	let matrix = object.getObjectMatrix();
-	if(object===obj_planet)
-		gl.uniformMatrix4fv(u_planetMatrix, false, matrix);
-	else
-	if(object===obj_satellite)
-		gl.uniformMatrix4fv(u_satelliteMatrix, false, matrix);
-	else
-	if(object===obj_ring1)
-		gl.uniformMatrix4fv(u_ring1Matrix, false, matrix);
-	else
-	if(object===obj_ring2)
-		gl.uniformMatrix4fv(u_ring2Matrix, false, matrix);
-	else {
-		gl.uniformMatrix4fv(u_planetMatrix, false, matrix);
-	}
+	gl.uniformMatrix4fv(u_modelMatrix, false, matrix);
 	let MV = mat4.create();
 	mat4.multiply(MV , viewMatrix , matrix);
 
@@ -488,9 +467,10 @@ function scalePlanet(){
 
 /*Funcion para cargar los objetos*/
 function onModelLoad() {
-	//parsedOBJ = OBJParser.parseFile(planeta);
-	parsedOBJ = OBJParser.parseFile(ball); //Cargo el planeta
+	//parsedOBJ = OBJParser.parseFile(teapot);
+	parsedOBJ = OBJParser.parseFile(planeta); //Cargo el planeta
 	parsedOBJ2 = OBJParser.parseFile(satelite); //Cargo el satelite
 	parsedOBJ3 = OBJParser.parseFile(anillo1); //Cargo el anillo interior
 	parsedOBJ4 = OBJParser.parseFile(anillo2); //Cargo el anillo exterior
+	parsedOBJ5 = OBJParser.parseFile(ball);
 }

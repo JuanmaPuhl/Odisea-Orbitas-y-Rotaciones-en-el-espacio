@@ -1,4 +1,4 @@
-var teapotOBJSource = `
+var teapot = `
 # Blender v2.79 (sub 0) OBJ File: ''
 # www.blender.org
 o teapot.005
