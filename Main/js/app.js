@@ -57,15 +57,14 @@ var then = 0;
 var rotationSpeed = 30;
 
 //MATERIALES
-var jade;
-var gold;
-var rock;
+var materials = [];
 
 //OBJETOS
 var obj_planet;
 var obj_satellite;
 var obj_ring1;
 var obj_ring2;
+var balls = [];
 
 //LUCES
 var light;
@@ -82,13 +81,10 @@ function onLoad() {
 	//Cargo los objetos a la escena
 	onModelLoad();
 	cargarSliders();//Cargo los sliders
+	//Creacion de MATERIALES
+	crearMateriales();
 
-	obj_planet = new Object(parsedOBJ);
-	obj_satellite = new Object(parsedOBJ2);
-	obj_ring1 = new Object(parsedOBJ3);
-	obj_ring2 = new Object(parsedOBJ4);
 
-	light = new Light(light_position , light_intensity , light_angle);
 
 	//vertexShaderSource y fragmentShaderSource estan importadas en index.html <script>
 	shaderProgram = ShaderProgramHelper.create(vertexShaderSource, fragmentShaderSource);
@@ -114,6 +110,20 @@ function onLoad() {
 	u_is = gl.getUniformLocation(shaderProgram, 'is');
 	u_MV = gl.getUniformLocation(shaderProgram, 'MV');
 
+	obj_planet = new Object(parsedOBJ);
+	obj_satellite = new Object(parsedOBJ2);
+	obj_ring1 = new Object(parsedOBJ3);
+	obj_ring2 = new Object(parsedOBJ4);
+	for(let i = 0; i<24; i++){
+			balls.push(new Object(parsedOBJ));
+			balls[i].setMaterial(getMaterialByName("Gold"));
+			balls[i].setVao(VAOHelper.create(balls[i].getIndices(), [
+				new VertexAttributeInfo(balls[i].getPositions(), posLocation, 3),
+				new VertexAttributeInfo(balls[i].getColors(), colLocation, 3),
+				new VertexAttributeInfo(balls[i].getNormals(), vertexNormal_location, 3)
+			]));
+	}
+	light = new Light(light_position , light_intensity , light_angle);
 
 	//Para el planeta
 	let vertexAttributeInfoArray = [
@@ -158,38 +168,16 @@ function onLoad() {
 	let far = 10.0;//Establezco la distancia maxima que renderizare
 	projMatrix=camaraEsferica.createPerspectiveMatrix(fov,near,far,aspect);//Calculo la matriz de proyeccion
 
-	//Creacion de MATERIALES
-	crearMateriales();
 
-	obj_planet.setMaterial(gold);
-	obj_satellite.setMaterial(gold);
-	obj_ring1.setMaterial(rock);
-	obj_ring2.setMaterial(jade);
+
+	obj_planet.setMaterial(getMaterialByName("Gold"));
+	obj_satellite.setMaterial(getMaterialByName("Gold"));
+	obj_ring1.setMaterial(getMaterialByName("Rock"));
+	obj_ring2.setMaterial(getMaterialByName("Jade"));
 
 	gl.enable(gl.DEPTH_TEST);//Activo esta opcion para que dibuje segun la posicion en Z. Si hay dos fragmentos con las mismas x,y pero distinta zIndex
 	//Dibujara los que esten mas cerca de la pantalla.
 	requestAnimationFrame(onRender)//Pido que inicie la animacion ejecutando onRender
-}
-
-/*Reordeno valores para dibujarlos como lineas
-	La idea es que si tengo el triangulo con vertices (0,0,0) (1,1,0) (-1,1,0)
-	debo unirlos de la siguiente manera: (0,0,0) (1,1,0) , (0,0,0) (-1,1,0) , (-1,1,0) (1,1,0)
-	para dibujarlos como lineas. Es decir, establezco el punto inicial y el punto final.
-*/
-function convertIndexes(indexes){
-	let newIndexes = [];
-	for (let x = 0; x < indexes.length; x = x + 3) {
-		//Linea 1
-		newIndexes.push(indexes[x]);
-		newIndexes.push(indexes[x + 1]);
-		//Linea 2
-		newIndexes.push(indexes[x + 1]);
-		newIndexes.push(indexes[x + 2]);
-		//Linea 3. Tiene que ser asi para respetar el sentido antihorario
-		newIndexes.push(indexes[x + 2]);
-		newIndexes.push(indexes[x]);
-	}
-	return newIndexes;
 }
 
 /*Este metodo se llama constantemente gracias al metodo requestAnimationFrame(). En los sliders no
@@ -208,8 +196,24 @@ function onRender(now) {
 	gl.useProgram(shaderProgram);
 	passLight(light);
 	passCamera();
-	drawObject(obj_planet);
-	//drawObject(obj_satellite);
+
+	for(let i = 0; i<balls.length; i++){
+			balls[i].resetObjectMatrix();
+			let matrix = balls[i].getObjectMatrix();
+			let translationMatrix = mat4.create();
+			let scaleMatrix = mat4.create();
+			mat4.fromTranslation(translationMatrix,[20,0,0]);
+			mat4.multiply(matrix,translationMatrix,matrix);
+			translationMatrix = mat4.create();
+			mat4.fromScaling(scaleMatrix,[0.08,0.08,0.08]);
+			mat4.fromTranslation(translationMatrix,[-2*i,0,0]);
+			mat4.multiply(matrix,translationMatrix,matrix);
+			mat4.multiply(matrix,scaleMatrix,matrix);
+			drawObject(balls[i]);
+
+	}
+	//drawObject(obj_planet);
+	drawObject(obj_satellite);
 	//drawObject(obj_ring1);
 	//drawObject(obj_ring2);
 	gl.useProgram(null);
@@ -262,13 +266,18 @@ function drawObject(object){
 	let matrix = object.getObjectMatrix();
 	if(object===obj_planet)
 		gl.uniformMatrix4fv(u_planetMatrix, false, matrix);
+	else
 	if(object===obj_satellite)
 		gl.uniformMatrix4fv(u_satelliteMatrix, false, matrix);
+	else
 	if(object===obj_ring1)
 		gl.uniformMatrix4fv(u_ring1Matrix, false, matrix);
+	else
 	if(object===obj_ring2)
 		gl.uniformMatrix4fv(u_ring2Matrix, false, matrix);
-
+	else {
+		gl.uniformMatrix4fv(u_planetMatrix, false, matrix);
+	}
 	let MV = mat4.create();
 	mat4.multiply(MV , viewMatrix , matrix);
 
@@ -480,7 +489,7 @@ function scalePlanet(){
 /*Funcion para cargar los objetos*/
 function onModelLoad() {
 	//parsedOBJ = OBJParser.parseFile(planeta);
-	parsedOBJ = OBJParser.parseFile(teapotOBJSource); //Cargo el planeta
+	parsedOBJ = OBJParser.parseFile(ball); //Cargo el planeta
 	parsedOBJ2 = OBJParser.parseFile(satelite); //Cargo el satelite
 	parsedOBJ3 = OBJParser.parseFile(anillo1); //Cargo el anillo interior
 	parsedOBJ4 = OBJParser.parseFile(anillo2); //Cargo el anillo exterior
