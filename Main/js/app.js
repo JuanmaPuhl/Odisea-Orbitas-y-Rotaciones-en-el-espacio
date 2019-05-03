@@ -87,7 +87,7 @@ function onLoad() {
 	//vertexShaderSource y fragmentShaderSource estan importadas en index.html <script>
 	shaderProgram = ShaderProgramHelper.create(vertexShaderSource, fragmentShaderSource);
 	let posLocation = gl.getAttribLocation(shaderProgram, 'vertexPos');
-	let colLocation = gl.getAttribLocation(shaderProgram, 'vertexCol');
+//	let colLocation = gl.getAttribLocation(shaderProgram, 'vertexCol');
 	let vertexNormal_location = gl.getAttribLocation(shaderProgram, 'vertexNormal');
 	u_modelMatrix = gl.getUniformLocation(shaderProgram, 'modelMatrix');
 	u_viewMatrix = gl.getUniformLocation(shaderProgram, 'viewMatrix');
@@ -112,7 +112,7 @@ function onLoad() {
 			balls[i].setMaterial(getMaterialByIndex(i%materials.length));
 			balls[i].setVao(VAOHelper.create(balls[i].getIndices(), [
 				new VertexAttributeInfo(balls[i].getPositions(), posLocation, 3),
-				new VertexAttributeInfo(balls[i].getColors(), colLocation, 3),
+
 				new VertexAttributeInfo(balls[i].getNormals(), vertexNormal_location, 3)
 			]));
 	}
@@ -121,25 +121,25 @@ function onLoad() {
 	//Para el planeta
 	let vertexAttributeInfoArray = [
 		new VertexAttributeInfo(obj_planet.getPositions(), posLocation, 3),
-		new VertexAttributeInfo(obj_planet.getColors(), colLocation, 3),
+
 		new VertexAttributeInfo(obj_planet.getNormals(), vertexNormal_location, 3)
 	];
 	//Para el satelite
 	let vertexAttributeInfoArray2 = [
 		new VertexAttributeInfo(obj_satellite.getPositions(), posLocation, 3),
-		new VertexAttributeInfo(obj_satellite.getColors(), colLocation, 3),
+//		new VertexAttributeInfo(obj_satellite.getColors(), colLocation, 3),
 		new VertexAttributeInfo(obj_satellite.getNormals(), vertexNormal_location, 3)
 	];
 	//Para el anillo interior
 	let vertexAttributeInfoArray3 = [
 		new VertexAttributeInfo(obj_ring1.getPositions(), posLocation, 3),
-		new VertexAttributeInfo(obj_ring1.getColors(), colLocation, 3),
+	//	new VertexAttributeInfo(obj_ring1.getColors(), colLocation, 3),
 		new VertexAttributeInfo(obj_ring1.getNormals(), vertexNormal_location, 3)
 	];
 	//Para el anillo exterior
 	let vertexAttributeInfoArray4 = [
 		new VertexAttributeInfo(obj_ring2.getPositions(), posLocation, 3),
-		new VertexAttributeInfo(obj_ring2.getColors(), colLocation, 3),
+	//	new VertexAttributeInfo(obj_ring2.getColors(), colLocation, 3),
 		new VertexAttributeInfo(obj_ring2.getNormals(), vertexNormal_location, 3)
 	];
 

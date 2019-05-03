@@ -10,7 +10,7 @@ uniform mat4 MVP;
 
 
 in vec3 vertexPos;
-in vec3 vertexCol;
+
 in vec3 vertexNormal;
 
 out vec3 vNE; //Vector normal en espacio ojo
